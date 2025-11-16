@@ -1,4 +1,4 @@
-name: CI - Build and Test
+name: CI/CD - Build, Test, and Deploy to Google Cloud Run
 
 on:
   push:
@@ -30,3 +30,44 @@ jobs:
         
       - name: Run Production Build
         run: npm run build
+        
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.SH_SERVICE_ACC_KEY }}
+          
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.SH_PROJECT_ID }}
+          
+      - name: Configure Docker
+        run: gcloud auth configure-docker us-central1-docker.pkg.dev
+        
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/mi-portal-repo/mi-portal:${{ github.sha }}
+            us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/mi-portal-repo/mi-portal:latest
+            
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy mi-portal-servicio \
+            --image=us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/mi-portal-repo/mi-portal:latest \
+            --port 3000 \
+            --platform managed \
+            --region us-central1 \
+            --allow-unauthenticated
