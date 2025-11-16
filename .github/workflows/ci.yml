@@ -60,13 +60,13 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: |
-            us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/mi-portal-repo/mi-portal:${{ github.sha }}
-            us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/mi-portal-repo/mi-portal:latest
+            us-central1-docker.pkg.dev/${{ secrets.SH_PROJECT_ID }}/mi-portal-repo/mi-portal:${{ github.sha }}
+            us-central1-docker.pkg.dev/${{ secrets.SH_PROJECT_ID }}/mi-portal-repo/mi-portal:latest
             
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy mi-portal-servicio \
-            --image=us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/mi-portal-repo/mi-portal:latest \
+            --image=us-central1-docker.pkg.dev/${{ secrets.SH_PROJECT_ID }}/mi-portal-repo/mi-portal:latest \
             --port 3000 \
             --platform managed \
             --region us-central1 \
